@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#07140f">
 <title>Ghost Circuit</title>
-<meta name="description" content="Collect ten sparks. Every six seconds, a ghost starts replaying your own moves.">
+<meta name="description" content="Collect ten sparks. Every five seconds, a ghost starts replaying your own moves.">
 <link id="game-icon" rel="icon">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Syne:wght@800&display=swap" rel="stylesheet">
 <style>
@@ -236,7 +236,7 @@
       </dl>
       <dl class="hud-cell">
         <dt>Next ghost</dt>
-        <dd><strong id="time">6.0s</strong><span class="time-track" aria-hidden="true"><span id="time-fill"></span></span></dd>
+        <dd><strong id="time">5.0s</strong><span class="time-track" aria-hidden="true"><span id="time-fill"></span></span></dd>
       </dl>
       <dl class="hud-cell"><dt>Ghosts</dt><dd><strong id="echoes">0</strong></dd></dl>
       <dl class="hud-cell"><dt>Best</dt><dd><strong id="best">0</strong></dd></dl>
@@ -247,7 +247,7 @@
       <section id="overlay" class="overlay" data-scene="ready" aria-labelledby="message">
         <div class="scene-copy">
           <h2 id="message">Dodge your own ghost.</h2>
-          <p id="details">Collect 10 sparks. Every six seconds, a new ghost replays the route you just took.</p>
+          <p id="details">Collect 10 sparks. Every five seconds, a new ghost replays the route you just took.</p>
           <dl class="run-stats" id="run-stats" hidden>
             <div><dt>Sparks collected</dt><dd><strong id="result-score">0</strong><span> / 10</span></dd></div>
             <div><dt>Run time</dt><dd id="result-time">0.0s</dd></div>
@@ -283,7 +283,7 @@
 
 // Movement and ghost recordings advance on the same fixed clock.
 const STEP = 1 / 60;
-const LOOP = 360;
+const LOOP = Math.round(5 / STEP);
 const GRACE = 25;
 const GOAL = 10;
 const PLAYER_RADIUS = 11;
