@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#07140f">
 <title>Ghost Circuit</title>
-<meta name="description" content="Collect ten sparks. Every five seconds, a ghost starts replaying your own moves.">
+<meta name="description" content="Outrun your past moves across three levels. A new ghost replays your route every five seconds.">
 <link id="game-icon" rel="icon">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Syne:wght@800&display=swap" rel="stylesheet">
 <style>
@@ -49,7 +49,7 @@
   .sound-icon { width: 14px; height: 12px; background: currentColor; clip-path: polygon(0 30%, 27% 30%, 76% 0, 76% 100%, 27% 70%, 0 70%); }
   #sound[aria-pressed="false"] .sound-icon { opacity: .4; }
 
-  .hud { display: grid; grid-template-columns: 1.7fr 1.2fr .6fr .6fr; gap: 10px clamp(16px, 3vw, 40px); align-items: end; margin-bottom: 14px; }
+  .hud { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1.2fr) repeat(3, minmax(0, .6fr)); gap: 10px clamp(16px, 3vw, 40px); align-items: end; margin-bottom: 14px; }
   .hud-cell { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
   .hud dt { color: var(--muted); font-size: .8125rem; font-weight: 500; }
   .hud dd { display: flex; align-items: center; gap: 6px 14px; color: var(--muted); font-size: .9375rem; }
@@ -90,14 +90,21 @@
   .run-stats dd strong { color: var(--scene-accent); font-weight: inherit; }
   .record { margin-top: 12px; color: var(--scene-accent); font-size: .875rem; font-weight: 700; }
 
-  .route-card { min-width: 0; overflow: hidden; padding: 12px; border: 1px solid var(--trace); border-radius: 3px; background: var(--deep); animation: show-route 240ms ease-out both; }
-  @keyframes show-route { from { opacity: .5; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-  .route-card figcaption { margin-bottom: 8px; font-size: .875rem; font-weight: 600; }
-  .route-card canvas { display: block; width: 100%; height: clamp(124px, 20vw, 235px); border: 1px solid #1d5140; background: #081c16; }
-  .legend { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 10px 0 0; padding: 0; color: var(--silk-dim); font-size: .8125rem; list-style: none; }
+  .route-card { min-width: 0; display: grid; gap: 10px; padding: clamp(12px, 2vw, 18px); border: 1px solid var(--trace); border-radius: 8px; background: var(--deep); font-family: var(--text); animation: show-route 240ms cubic-bezier(.2, .8, .2, 1) both; }
+  @keyframes show-route { from { transform: translateY(5px); } to { transform: none; } }
+  .route-card figcaption { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 4px 12px; }
+  .route-title { font: 800 clamp(1.17rem, 2.5vw, 1.45rem)/1.1 var(--text); letter-spacing: -.025em; }
+  .route-window { color: var(--silk-dim); font-size: .8125rem; }
+  .route-card canvas { display: block; width: 100%; height: clamp(140px, 20vw, 216px); border: 1px solid #305447; border-radius: 4px; background: #081c16; }
+  .route-playback { display: flex; align-items: center; gap: 8px; }
+  .route-playback .button { min-height: 36px; min-width: 6.5rem; padding: 5px 8px; font-size: .8125rem; }
+  .route-playback input { flex: 1; min-width: 0; min-height: 36px; margin: 0; accent-color: var(--amber); cursor: pointer; }
+  .route-clock { min-width: 5.1ch; text-align: right; color: var(--silk); font-size: .8125rem; font-variant-numeric: tabular-nums; }
+  .legend { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 0; padding: 0; color: var(--silk-dim); font-size: .8125rem; list-style: none; }
   .legend li { display: inline-flex; align-items: center; gap: 6px; }
   .legend i { width: 14px; border-top: 2px solid var(--silk); }
   .legend .ghost-key { border-color: var(--ghost); border-top-style: dashed; }
+  .legend .trail-key { border-color: var(--coral); }
   .legend .result-key { width: 8px; height: 8px; border: 0; background: var(--scene-accent); transform: rotate(45deg); }
 
   .controls { display: flex; align-items: center; justify-content: space-between; gap: 10px 18px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--rule); color: var(--muted); font-size: .875rem; }
@@ -106,15 +113,18 @@
   @media (pointer: coarse) { .key-help { display: none; } .touch-help { display: inline; } }
 
   @media (max-width: 660px) {
-    .hud { grid-template-columns: 1.3fr .8fr .6fr; }
+    .hud { grid-template-columns: repeat(4, minmax(0, 1fr)); }
     .hud-cell:first-child { grid-column: 1 / -1; }
+    .hud dd { gap: 5px; }
+    .hud .time-track { display: none; }
     .arena { height: clamp(350px, 85vw, 430px); }
-    .arena[data-scene="lost"], .arena[data-scene="won"] { height: clamp(418px, 89vw, 505px); }
+    .arena[data-scene="lost"], .arena[data-scene="won"] { height: auto; }
     .overlay { grid-template-columns: minmax(0, 1fr); padding: clamp(17px, 5vw, 26px); }
     .overlay[data-scene="ready"] { background: linear-gradient(90deg, #0a221bf4 0%, #0a221bd9 43%, #0a221b30); }
+    .overlay[data-scene="lost"], .overlay[data-scene="won"] { position: relative; min-height: 418px; }
     .overlay h2 { font-size: clamp(2.2rem, 9vw, 3.6rem); }
     .run-stats { margin-top: 10px; } .record { margin-top: 6px; } .actions { margin-top: 12px; }
-    .route-card { padding: 8px; } .legend { margin-top: 6px; }
+    .route-playback .button, .route-playback input { min-height: 44px; }
   }
   @media (max-width: 375px) { .sound-icon { display: none; } }
   @media (prefers-reduced-motion: reduce) { .button { transition: none; } .route-card { animation: none; } }
@@ -135,7 +145,7 @@
   .hud-cell:nth-child(3) dt::before { width: 9px; height: 9px; border: 2px solid #2a7fb3; border-radius: 50%; box-sizing: content-box; }
   .hud-cell:nth-child(4) dt::before { width: 9px; height: 9px; background: var(--amber); box-shadow: 0 0 0 1.5px var(--ink); transform: rotate(45deg); }
   .hud strong { font-size: clamp(1.8rem, 4.4vw, 2.7rem); }
-  .time-track { height: 15px; border-right: 1.5px solid var(--ink); background: repeating-linear-gradient(90deg, var(--ink) 0 1.5px, transparent 1.5px calc(100% / 6)) left bottom / 100% 8px no-repeat; }
+  .time-track { height: 15px; border-right: 1.5px solid var(--ink); background: repeating-linear-gradient(90deg, var(--ink) 0 1.5px, transparent 1.5px 20%) left bottom / 100% 8px no-repeat; }
   #time-fill { height: 5px; }
 
   .overlay h2 {
@@ -200,6 +210,20 @@
   .hud-cell:nth-child(2) dt::before { border-top-color: var(--ghost); }
   .hud-cell:nth-child(3) dt::before { border-color: var(--ghost); }
   .hud #score { color: var(--amber); text-shadow: 0 0 20px rgba(255,191,60,.45); }
+  #spark-alert { color: var(--coral); }
+  .hud #best { font-size: clamp(1rem, 3vw, 1.8rem); }
+  .level-picker { position: relative; }
+  .level-picker::after {
+    content: ""; position: absolute; right: 9px; top: calc(50% - 5px);
+    width: 7px; height: 7px; border-right: 2px solid var(--silk-dim); border-bottom: 2px solid var(--silk-dim);
+    transform: rotate(45deg); pointer-events: none;
+  }
+  #level {
+    appearance: none; width: 100%; min-height: 36px; padding: 4px 21px 4px 8px;
+    border: 1px solid var(--trace); border-radius: 4px; background: var(--deep); color: var(--ink);
+    cursor: pointer; font: 700 clamp(.875rem, 2.4vw, 1.2rem)/1.2 var(--text); font-variant-numeric: tabular-nums;
+  }
+  #level:hover { border-color: var(--silk-dim); }
   .hud[data-imminent="true"] #time { color: var(--coral); }
   .hud[data-imminent="true"] #time-fill { background: var(--coral); }
   kbd { background: rgba(242,239,226,.08); color: var(--silk); border-color: #5d8a78; }
@@ -211,7 +235,20 @@
   .overlay[data-scene="ready"] .button.primary { position: relative; }
   .overlay[data-scene="ready"] .button.primary::after { content: ""; position: absolute; inset: -4px; border: 2px solid var(--amber); border-radius: 8px; pointer-events: none; animation: ping 2.2s ease-out infinite; }
   @keyframes ping { from { opacity: .85; transform: scale(1); } to { opacity: 0; transform: scale(1.3, 1.6); } }
-  @media (max-width: 660px) { .hud-cell:nth-child(n+2) { border-top-color: var(--trace); } }
+  @media (max-width: 660px) {
+    .hud-cell { padding-inline: clamp(7px, 2vw, 13px); }
+    .hud-cell:nth-child(n+2) { border-top-color: var(--trace); }
+    .hud-cell:nth-child(2) dt, .hud-cell:nth-child(4) dt { display: block; }
+    .hud-cell:nth-child(2) dt::before, .hud-cell:nth-child(4) dt::before { display: none; }
+    #level { padding-inline: 5px 16px; }
+    .level-picker::after { right: 6px; width: 6px; height: 6px; top: calc(50% - 4px); }
+  }
+  @media (min-width: 661px) and (max-height: 720px) {
+    .game { padding-top: 16px; }
+    .arena { height: clamp(370px, 64vh, 490px); }
+    .overlay { padding-block: 24px; }
+    .overlay h2 { font-size: clamp(1.8rem, 4vw, 3.05rem); }
+  }
   @media (prefers-reduced-motion: reduce) { body { background-image: none; } .overlay .button.primary::after { animation: none; display: none; } }
 </style>
 </head>
@@ -228,9 +265,9 @@
   <section class="cabinet" aria-label="Ghost Circuit arcade game">
     <div class="hud" id="hud" role="group" aria-label="Run statistics">
       <dl class="hud-cell">
-        <dt>Sparks</dt>
+        <dt>Sparks <span id="spark-alert" role="status"></span></dt>
         <dd>
-          <span><strong id="score">0</strong> / 10</span>
+          <span><strong id="score">0</strong> / <span id="goal">6</span></span>
           <span id="spark-meter" class="spark-meter" aria-hidden="true"></span>
         </dd>
       </dl>
@@ -239,7 +276,17 @@
         <dd><strong id="time">5.0s</strong><span class="time-track" aria-hidden="true"><span id="time-fill"></span></span></dd>
       </dl>
       <dl class="hud-cell"><dt>Ghosts</dt><dd><strong id="echoes">0</strong></dd></dl>
-      <dl class="hud-cell"><dt>Best</dt><dd><strong id="best">0</strong></dd></dl>
+      <dl class="hud-cell"><dt>Best time</dt><dd><strong id="best">—</strong></dd></dl>
+      <dl class="hud-cell">
+        <dt><label for="level">Level</label></dt>
+        <dd class="level-picker">
+          <select id="level">
+            <option value="0">1 / 3</option>
+            <option value="1" disabled>2 / 3</option>
+            <option value="2" disabled>3 / 3</option>
+          </select>
+        </dd>
+      </dl>
     </div>
 
     <div class="arena" data-scene="ready">
@@ -247,25 +294,34 @@
       <section id="overlay" class="overlay" data-scene="ready" aria-labelledby="message">
         <div class="scene-copy">
           <h2 id="message">Dodge your own ghost.</h2>
-          <p id="details">Collect 10 sparks. Every five seconds, a new ghost replays the route you just took.</p>
+          <p id="details">Collect 6 sparks. Every five seconds, a new ghost replays the route you just took.</p>
           <dl class="run-stats" id="run-stats" hidden>
-            <div><dt>Sparks collected</dt><dd><strong id="result-score">0</strong><span> / 10</span></dd></div>
+            <div><dt>Sparks collected</dt><dd><strong id="result-score">0</strong><span> / <span id="result-goal">6</span></span></dd></div>
             <div><dt>Run time</dt><dd id="result-time">0.0s</dd></div>
           </dl>
-          <p class="record" id="record" hidden>New best</p>
+          <p class="record" id="record" hidden>New best time</p>
           <div class="actions">
-            <button type="button" class="button primary" id="action">Start run</button>
+            <button type="button" class="button primary" id="action">Start level 1</button>
             <button type="button" class="button" id="restart" hidden>Restart</button>
           </div>
         </div>
-        <figure class="route-card" id="route-card" hidden>
-          <figcaption>Final route</figcaption>
+        <figure class="route-card" id="route-card" aria-labelledby="route-title" hidden>
+          <figcaption>
+            <span class="route-title" id="route-title">Route replay</span>
+            <span class="route-window" id="replay-window">Last 5 seconds</span>
+          </figcaption>
           <canvas id="route-map" role="img" aria-label="Map of your final route"></canvas>
           <ul class="legend" aria-label="Route map legend">
             <li><i aria-hidden="true"></i>Your route</li>
             <li id="ghost-legend"><i class="ghost-key" aria-hidden="true"></i>Ghost’s route</li>
+            <li id="trail-legend" hidden><i class="trail-key" aria-hidden="true"></i>Dangerous trail</li>
             <li><i class="result-key" aria-hidden="true"></i><span id="map-marker">Collision</span></li>
           </ul>
+          <div class="route-playback">
+            <button class="button" type="button" id="replay-play">Replay</button>
+            <input id="replay-position" type="range" min="0" max="300" value="300" aria-label="Replay position">
+            <span class="route-clock" id="replay-time" aria-hidden="true">5.00s</span>
+          </div>
         </figure>
       </section>
     </div>
@@ -285,13 +341,20 @@
 const STEP = 1 / 60;
 const LOOP = Math.round(5 / STEP);
 const GRACE = 25;
-const GOAL = 10;
+const TRAIL_TICKS = Math.round(1 / STEP);
+const TRAIL_RADIUS = 5;
+const TRAIL_COLOR = "#ff8a75";
 const PLAYER_RADIUS = 11;
 const SPARK_RADIUS = 12;
 const GHOST_RADIUS = 11;
 const MARGIN = 43;
 const TAU = Math.PI * 2;
 const GHOST_COLORS = ["#6fb8ff", "#b58cff", "#ff7fb6"];
+const LEVELS = [
+  { goal: 6, trails: false, steals: false },
+  { goal: 8, trails: true, steals: false, briefing: "Ghosts leave dangerous trails that fade after one second." },
+  { goal: 10, trails: true, steals: true, briefing: "Ghosts can steal sparks. If one gets there first, the spark respawns elsewhere." },
+];
 
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
@@ -301,10 +364,10 @@ function distance(a, b) {
   return Math.hypot(a.x - b.x, a.y - b.y);
 }
 
-function createRun(width, height) {
+function createRun(width, height, level) {
   const player = { x: width * .33, y: height * .5, vx: 0, vy: 0, heading: -.24 };
   return {
-    width, height, player, tick: 0, score: 0, result: null,
+    width, height, level, player, tick: 0, score: 0, result: null, collision: null, lastSteal: -Infinity,
     route: [{ x: player.x, y: player.y, heading: player.heading }],
     ghosts: [], spark: { x: width * .67, y: height * .36 },
   };
@@ -332,6 +395,53 @@ function spawnSpark(run, random) {
   return best;
 }
 
+function visitTrail(ghost, tick, born, visit) {
+  const first = Math.max(born + GRACE, tick - TRAIL_TICKS + 1);
+  for (let frame = first; frame <= tick; frame++) {
+    const phase = frame % LOOP;
+    if (phase < GRACE) continue;
+    // Each replay starts a fresh path without a line across the loop boundary.
+    const end = ghost[phase];
+    const start = phase === GRACE ? end : ghost[phase - 1];
+    const strength = 1 - (tick - frame) / TRAIL_TICKS;
+    if (visit(start, end, strength)) break;
+  }
+}
+
+function trailRadius(strength) {
+  return 1 + (TRAIL_RADIUS - 1) * strength;
+}
+
+function closestPoint(point, start, end) {
+  const x = end.x - start.x;
+  const y = end.y - start.y;
+  const fraction = clamp(((point.x - start.x) * x + (point.y - start.y) * y) / (x * x + y * y || 1), 0, 1);
+  return { x: start.x + x * fraction, y: start.y + y * fraction };
+}
+
+function findCollision(run, phase) {
+  if (phase >= GRACE) {
+    const ghost = run.ghosts.find(route => distance(run.player, route[phase]) < PLAYER_RADIUS + GHOST_RADIUS);
+    if (ghost) {
+      const hit = ghost[phase];
+      return { kind: "ship", ghost, point: { x: (run.player.x + hit.x) / 2, y: (run.player.y + hit.y) / 2 } };
+    }
+  }
+  if (!run.level.trails) return null;
+
+  for (const [index, ghost] of run.ghosts.entries()) {
+    let collision = null;
+    visitTrail(ghost, run.tick, (index + 1) * LOOP, (start, end, strength) => {
+      const point = closestPoint(run.player, start, end);
+      if (distance(run.player, point) >= PLAYER_RADIUS + trailRadius(strength)) return false;
+      collision = { kind: "trail", ghost, point };
+      return true;
+    });
+    if (collision) return collision;
+  }
+  return null;
+}
+
 function advance(run, steering, random = Math.random) {
   if (run.result) return null;
   const player = run.player;
@@ -357,19 +467,27 @@ function advance(run, steering, random = Math.random) {
     run.route.push(point);
   }
 
-  if (phase >= GRACE && run.ghosts.some(ghost => distance(player, ghost[phase]) < PLAYER_RADIUS + GHOST_RADIUS)) {
+  run.collision = findCollision(run, phase);
+  if (run.collision) {
     run.result = "lost";
     return "lost";
   }
 
   if (distance(player, run.spark) < PLAYER_RADIUS + SPARK_RADIUS) {
     run.score++;
-    if (run.score === GOAL) {
+    if (run.score === run.level.goal) {
       run.result = "won";
       return "won";
     }
     run.spark = spawnSpark(run, random);
     return "spark";
+  }
+
+  if (run.level.steals && phase >= GRACE &&
+      run.ghosts.some(ghost => distance(ghost[phase], run.spark) < GHOST_RADIUS + SPARK_RADIUS)) {
+    run.spark = spawnSpark(run, random);
+    run.lastSteal = run.tick;
+    return "stolen";
   }
 
   return event;
@@ -389,14 +507,20 @@ const restart = get("restart");
 const pauseButton = get("pause");
 const soundButton = get("sound");
 const routeMap = get("route-map");
-const meter = Array.from({ length: GOAL }, () => document.createElement("i"));
+const replayPlay = get("replay-play");
+const replayPosition = get("replay-position");
+const replayTime = get("replay-time");
+const levelPicker = get("level");
+const meter = Array.from({ length: LEVELS.at(-1).goal }, () => document.createElement("i"));
 get("spark-meter").replaceChildren(...meter);
+const sparkAlert = get("spark-alert");
 get("game-icon").href = get("brand-emblem").src;
 const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
 const keys = new Set();
 const steeringKeys = new Set(["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "KeyW", "KeyA", "KeyS", "KeyD"]);
 const tones = {
   spark: [520, 780, 1040],
+  stolen: [780, 390],
   ghost: [350, 262],
   lost: [185, 110, 65],
   won: [520, 660, 780, 1040],
@@ -405,7 +529,9 @@ const tones = {
 
 let drawn = { pixelWidth: 0, pixelHeight: 0, scale: 1, left: 0, top: 0 };
 let scene = "ready";
+let levelIndex = 0;
 let run = newRun();
+let replay = null;
 let raf = null;
 let clock = null;
 let lag = 0;
@@ -413,17 +539,31 @@ let pointer = null;
 let audio = null;
 let sound = true;
 let particles = [];
-let best = 0;
-let bestAtStart = 0;
+let newRecord = false;
+let unlockedLevel = 0;
+const bestTicks = LEVELS.map(() => null);
+const PROGRESS_KEY = "ghost-circuit-campaign-progress";
 
 try {
-  best = clamp(Number(localStorage.getItem("ghost-circuit-best")) || 0, 0, GOAL);
+  const saved = JSON.parse(localStorage.getItem(PROGRESS_KEY));
+  if (Array.isArray(saved?.bestTicks) && Number.isInteger(saved.unlockedLevel)) {
+    unlockedLevel = clamp(saved.unlockedLevel, 0, LEVELS.length - 1);
+    bestTicks.forEach((_, index) => {
+      const ticks = saved.bestTicks[index];
+      if (Number.isSafeInteger(ticks) && ticks > 0) bestTicks[index] = ticks;
+    });
+  } else {
+    // Earlier saves recorded sparks and can still establish which levels were cleared.
+    const scores = JSON.parse(localStorage.getItem("ghost-circuit-campaign-bests"));
+    while (unlockedLevel < LEVELS.length - 1 && scores?.[unlockedLevel] >= LEVELS[unlockedLevel].goal) {
+      unlockedLevel++;
+    }
+  }
 } catch {}
-get("best").textContent = best;
 
 function newRun() {
   const width = field.clientWidth < 580 ? 540 : 880;
-  return createRun(width, 530);
+  return createRun(width, 530, LEVELS[levelIndex]);
 }
 
 function tone(name) {
@@ -465,12 +605,67 @@ function updateHUD() {
   get("time").textContent = (remaining * LOOP * STEP).toFixed(1) + "s";
   get("time-fill").style.transform = "scaleX(" + remaining + ")";
   get("hud").dataset.imminent = String(remaining * LOOP * STEP <= 1);
+  const notice = scene === "playing" && run.tick - run.lastSteal < 90 ? "Ghost stole a spark" : "";
+  if (sparkAlert.textContent !== notice) sparkAlert.textContent = notice;
+}
+
+function formatTime(ticks) {
+  return (ticks * STEP).toFixed(2) + "s";
+}
+
+function updateProgressHUD() {
+  levelPicker.value = String(levelIndex);
+  for (const option of levelPicker.options) option.disabled = Number(option.value) > unlockedLevel;
+  const time = bestTicks[levelIndex];
+  get("best").textContent = time === null ? "—" : formatTime(time);
+}
+
+function updateLevelHUD() {
+  updateProgressHUD();
+  get("goal").textContent = run.level.goal;
+  meter.forEach((segment, index) => { segment.hidden = index >= run.level.goal; });
+  updateHUD();
+}
+
+function recordClear() {
+  const previous = bestTicks[levelIndex];
+  newRecord = previous === null || run.tick < previous;
+  if (newRecord) bestTicks[levelIndex] = run.tick;
+  unlockedLevel = Math.max(unlockedLevel, Math.min(levelIndex + 1, LEVELS.length - 1));
+  updateProgressHUD();
+  try { localStorage.setItem(PROGRESS_KEY, JSON.stringify({ unlockedLevel, bestTicks })); } catch {}
+}
+
+function updateReplayControls() {
+  const offset = replay.tick - replay.start;
+  const time = formatTime(offset);
+  replayPosition.value = String(offset);
+  replayPosition.setAttribute("aria-valuetext", time + " of " + formatTime(run.tick - replay.start));
+  replayTime.textContent = time;
+  replayPlay.textContent = replay.startedAt !== null ? "Pause replay" :
+    replay.tick === run.tick || offset === 0 ? "Replay" : "Resume replay";
+}
+
+function prepareReplay() {
+  const start = Math.max(0, run.tick - LOOP);
+  replay = {
+    start,
+    tick: run.tick,
+    from: start,
+    startedAt: null,
+    ghostBorn: run.collision ? (run.ghosts.indexOf(run.collision.ghost) + 1) * LOOP : Infinity,
+  };
+  replayPosition.max = String(run.tick - start);
+  get("replay-window").textContent = start === 0 ? "Full run" : "Last " + Math.round(LOOP * STEP) + " seconds";
+  updateReplayControls();
 }
 
 function showScene(next) {
   scene = next;
   const finished = next === "lost" || next === "won";
   const won = next === "won";
+  const upcoming = won ? LEVELS[levelIndex + 1] : null;
+  replay = null;
   field.dataset.scene = next;
   overlay.dataset.scene = next;
   overlay.hidden = next === "playing";
@@ -478,8 +673,8 @@ function showScene(next) {
   restart.hidden = next !== "paused";
   get("run-stats").hidden = !finished;
   get("route-card").hidden = !finished;
-  get("record").hidden = !finished || run.score <= bestAtStart;
-  get("details").hidden = finished;
+  get("record").hidden = !won || !newRecord;
+  get("details").hidden = finished && !upcoming;
   clock = null;
   lag = 0;
   keys.clear();
@@ -488,13 +683,26 @@ function showScene(next) {
   if (next === "playing") {
     canvas.focus({ preventScroll: true });
   } else if (finished) {
-    get("message").textContent = won ? "You outran yourself." : "Your ghost caught you.";
+    if (upcoming) {
+      get("message").textContent = "Level " + (levelIndex + 1) + " clear.";
+      get("details").textContent = "Collect " + upcoming.goal + " sparks. " + upcoming.briefing;
+      action.textContent = "Start level " + (levelIndex + 2);
+    } else if (won) {
+      get("message").textContent = "You outran yourself.";
+      action.textContent = "Play campaign again";
+    } else {
+      get("message").textContent = run.collision.kind === "trail" ? "Caught by a trail." : "Your ghost caught you.";
+      action.textContent = "Retry level " + (levelIndex + 1);
+    }
     get("result-score").textContent = run.score;
-    get("result-time").textContent = (run.tick * STEP).toFixed(1) + "s";
+    get("result-goal").textContent = run.level.goal;
+    get("result-time").textContent = formatTime(run.tick);
     get("ghost-legend").hidden = won;
-    get("map-marker").textContent = won ? "Final spark" : "Collision";
-    routeMap.setAttribute("aria-label", won ? "Your final route, with the last spark marked" : "Your final route and the route of the ghost that caught you, with the collision marked");
-    action.textContent = "Play again";
+    get("trail-legend").hidden = won || !run.level.trails;
+    get("map-marker").textContent = won ? "Final spark" : run.collision.kind === "trail" ? "Trail collision" : "Collision";
+    routeMap.setAttribute("aria-label", won ? "Your final route, with the last spark marked" :
+      "Your final route and the ghost’s route, with the " + get("map-marker").textContent.toLowerCase() + " marked");
+    prepareReplay();
     action.focus({ preventScroll: true });
   } else if (next === "paused") {
     get("message").textContent = "Paused";
@@ -508,10 +716,10 @@ function showScene(next) {
 function start() {
   unlockAudio();
   run = newRun();
-  bestAtStart = best;
+  newRecord = false;
   particles = [];
-  updateHUD();
   showScene("playing");
+  updateLevelHUD();
   tone("start");
 }
 
@@ -542,13 +750,10 @@ function tick() {
 
   if (event === "spark" || event === "won") {
     addBurst(source, event === "won" ? "#8fe3a0" : "#ffbf3c");
-    if (run.score > best) {
-      best = run.score;
-      get("best").textContent = best;
-      try { localStorage.setItem("ghost-circuit-best", String(best)); } catch {}
-    }
   }
 
+  if (event === "won") recordClear();
+  if (event === "stolen") addBurst(source, TRAIL_COLOR);
   if (event === "ghost") addBurst(run.ghosts.at(-1)[0], "#7fc8ff");
   if (event) tone(event);
 
@@ -577,8 +782,14 @@ function frame(now) {
     }
     updateHUD();
   }
+  if (replay?.startedAt != null) {
+    const elapsedTicks = Math.max(0, Math.floor((now - replay.startedAt) / (STEP * 1000)));
+    replay.tick = Math.min(run.tick, replay.from + elapsedTicks);
+    if (replay.tick === run.tick) replay.startedAt = null;
+    updateReplayControls();
+  }
   render(now);
-  if (scene === "playing" || (scene === "ready" && !motion.matches)) queueFrame();
+  if (scene === "playing" || (scene === "ready" && !motion.matches) || replay?.startedAt != null) queueFrame();
 }
 
 function strokeLine(x1, y1, x2, y2) {
@@ -645,6 +856,26 @@ function drawTrail(points, end, color, alpha) {
     context.lineWidth = 1 + fade * 4;
     strokeLine(points[i - 1].x, points[i - 1].y, points[i].x, points[i].y);
   }
+  context.restore();
+}
+
+function drawDangerTrail(ghost, index) {
+  context.save();
+  context.strokeStyle = TRAIL_COLOR;
+  context.fillStyle = TRAIL_COLOR;
+  context.lineCap = "round";
+  visitTrail(ghost, run.tick, (index + 1) * LOOP, (start, end, strength) => {
+    const radius = trailRadius(strength);
+    context.globalAlpha = .22 + .66 * strength;
+    if (start.x === end.x && start.y === end.y) {
+      context.beginPath();
+      context.arc(end.x, end.y, radius, 0, TAU);
+      context.fill();
+    } else {
+      context.lineWidth = 2 * radius;
+      strokeLine(start.x, start.y, end.x, end.y);
+    }
+  });
   context.restore();
 }
 
@@ -768,13 +999,19 @@ function drawFinishMap() {
   if (!width || !height) return;
 
   const ratio = Math.min(window.devicePixelRatio || 1, 2);
-  routeMap.width = Math.round(width * ratio);
-  routeMap.height = Math.round(height * ratio);
+  const pixelWidth = Math.round(width * ratio);
+  const pixelHeight = Math.round(height * ratio);
+  if (routeMap.width !== pixelWidth || routeMap.height !== pixelHeight) {
+    routeMap.width = pixelWidth;
+    routeMap.height = pixelHeight;
+  }
   const map = routeMap.getContext("2d");
   const scale = Math.min((width - 22) / run.width, (height - 22) / run.height);
   const left = (width - run.width * scale) / 2;
   const top = (height - run.height * scale) / 2;
   map.setTransform(ratio, 0, 0, ratio, 0, 0);
+  map.clearRect(0, 0, width, height);
+  map.setLineDash([]);
   map.strokeStyle = "#1d5140";
   map.lineWidth = 1;
   map.strokeRect(left, top, run.width * scale, run.height * scale);
@@ -791,11 +1028,17 @@ function drawFinishMap() {
   map.stroke();
 
   const project = point => [left + point.x * scale, top + point.y * scale];
-  const trace = (points, end, color, dash) => {
+  const trace = (pointAt, color, dashed) => {
     map.beginPath();
-    map.moveTo(...project(points[0]));
-    for (let i = 1; i <= end; i++) map.lineTo(...project(points[i]));
-    map.setLineDash(dash);
+    let started = false;
+    for (let tick = replay.start; tick <= replay.tick; tick++) {
+      const point = pointAt(tick);
+      if (!point) continue;
+      if (!started || (dashed && tick % LOOP === 0)) map.moveTo(...project(point));
+      else map.lineTo(...project(point));
+      started = true;
+    }
+    map.setLineDash(dashed ? [4, 4] : []);
     map.strokeStyle = color;
     map.lineWidth = 2;
     map.lineJoin = "round";
@@ -803,26 +1046,48 @@ function drawFinishMap() {
     map.stroke();
   };
 
-  const won = scene === "won";
-  const phase = run.tick % LOOP;
-  const ghost = won ? null : run.ghosts.find(route => distance(run.player, route[phase]) < PLAYER_RADIUS + GHOST_RADIUS);
-  if (ghost) trace(ghost, phase, "#7fc8ff", [4, 4]);
-  const previousLoop = run.ghosts.at(-1);
-  const remaining = LOOP - run.route.length;
-  const finalRoute = previousLoop && remaining > 0 ? previousLoop.slice(-remaining).concat(run.route) : run.route;
-  trace(finalRoute, finalRoute.length - 1, "#f2efe2", []);
+  const collision = run.collision;
+  const playerAt = tick => (run.ghosts[Math.floor(tick / LOOP)] ?? run.route)[tick % LOOP];
+  const ghostAt = tick => tick >= replay.ghostBorn ? collision.ghost[tick % LOOP] : null;
 
-  const [startX, startY] = project(finalRoute[0]);
-  map.beginPath();
-  map.arc(startX, startY, 2.8, 0, TAU);
-  map.fillStyle = "#f2efe2";
-  map.fill();
+  if (collision && run.level.trails) {
+    map.strokeStyle = TRAIL_COLOR;
+    map.lineCap = "round";
+    visitTrail(collision.ghost, replay.tick, replay.ghostBorn, (start, end, strength) => {
+      map.globalAlpha = .25 + .55 * strength;
+      map.lineWidth = 1 + 2 * strength;
+      map.beginPath();
+      map.moveTo(...project(start));
+      map.lineTo(...project(end));
+      map.stroke();
+    });
+    map.globalAlpha = 1;
+  }
+  if (collision) trace(ghostAt, "#7fc8ff", true);
+  trace(playerAt, "#f2efe2", false);
 
-  const hit = ghost?.[phase];
-  const collision = hit ? { x: (hit.x + run.player.x) / 2, y: (hit.y + run.player.y) / 2 } : run.player;
-  const finish = won ? run.spark : collision;
+  const dot = (point, radius, color, outline = false) => {
+    map.beginPath();
+    map.arc(...project(point), radius, 0, TAU);
+    map.fillStyle = outline ? "#081c16" : color;
+    map.fill();
+    if (outline) {
+      map.strokeStyle = color;
+      map.lineWidth = 1.5;
+      map.stroke();
+    }
+  };
+  dot(playerAt(replay.start), 3, "#f2efe2", true);
+  if (replay.tick < run.tick) {
+    const ghost = ghostAt(replay.tick);
+    if (ghost) dot(ghost, 4, "#7fc8ff");
+    dot(playerAt(replay.tick), 4, "#f2efe2");
+    return;
+  }
+
+  const finish = collision ? collision.point : run.spark;
   const [finishX, finishY] = project(finish);
-  const accent = won ? "#8fe3a0" : "#ff8a75";
+  const accent = collision ? TRAIL_COLOR : "#8fe3a0";
   map.beginPath();
   map.arc(finishX, finishY, 8, 0, TAU);
   map.strokeStyle = accent;
@@ -864,12 +1129,13 @@ function render(now) {
   }
 
   const phase = run.tick % LOOP;
+  if (run.level.trails) run.ghosts.forEach(drawDangerTrail);
   if (scene !== "won") drawSpark(run.spark, motion.matches ? 0 : run.tick % 90 / 90);
   for (let i = 0; i < run.ghosts.length; i++) {
     const ghost = run.ghosts[i];
     const color = GHOST_COLORS[i % GHOST_COLORS.length];
     const solid = phase >= GRACE;
-    drawTrail(ghost, phase, color, solid ? .52 : .28);
+    if (!run.level.trails) drawTrail(ghost, phase, color, solid ? .52 : .28);
     drawShip(ghost[phase], color, true, solid ? .9 : .46);
   }
 
@@ -882,7 +1148,7 @@ function render(now) {
     context.fillRect(particle.x, particle.y, 2.7, 2.7);
   }
   context.globalAlpha = 1;
-  if (scene === "lost" || scene === "won") drawFinishMap();
+  if (replay) drawFinishMap();
 }
 
 function aim(event) {
@@ -898,8 +1164,41 @@ action.addEventListener("click", () => {
     unlockAudio();
     showScene("playing");
   } else {
+    if (scene === "won") levelIndex = (levelIndex + 1) % LEVELS.length;
     start();
   }
+});
+
+levelPicker.addEventListener("change", () => {
+  const selected = Number(levelPicker.value);
+  if (!Number.isInteger(selected) || selected < 0 || selected > unlockedLevel) {
+    levelPicker.value = String(levelIndex);
+    return;
+  }
+  if (selected === levelIndex) return;
+  levelIndex = selected;
+  start();
+});
+
+replayPlay.addEventListener("click", () => {
+  if (!replay) return;
+  if (replay.startedAt !== null) {
+    replay.startedAt = null;
+  } else {
+    if (replay.tick === run.tick) replay.tick = replay.start;
+    replay.from = replay.tick;
+    replay.startedAt = performance.now();
+  }
+  updateReplayControls();
+  queueFrame();
+});
+
+replayPosition.addEventListener("input", () => {
+  if (!replay) return;
+  replay.startedAt = null;
+  replay.tick = replay.start + Number(replayPosition.value);
+  updateReplayControls();
+  queueFrame();
 });
 
 restart.addEventListener("click", start);
@@ -912,7 +1211,7 @@ soundButton.addEventListener("click", () => {
 });
 
 window.addEventListener("keydown", event => {
-  if (event.ctrlKey || event.altKey || event.metaKey) return;
+  if (event.target === levelPicker || event.ctrlKey || event.altKey || event.metaKey) return;
 
   if (event.code === "Escape" && (scene === "playing" || scene === "paused") && !event.repeat) {
     event.preventDefault();
@@ -944,7 +1243,7 @@ for (const event of ["pointerup", "pointercancel", "lostpointercapture"]) {
 
 new ResizeObserver(queueFrame).observe(field);
 motion.addEventListener("change", queueFrame);
-updateHUD();
+updateLevelHUD();
 queueFrame();
 </script>
 <script>addEventListener("pointermove",e=>{const r=document.documentElement.style;r.setProperty("--mx",e.clientX+"px");r.setProperty("--my",e.clientY+"px")},{passive:true});</script>
